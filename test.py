@@ -10,6 +10,10 @@ load_dotenv()
 # Configure Gemini API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+# Initialize session state for storing report data
+if "report_data" not in st.session_state:
+    st.session_state.report_data = {}
+
 # Cache PDF extraction to avoid re-reading
 @st.cache_data(show_spinner=False)
 def input_pdf_setup(uploaded_file):
@@ -44,8 +48,6 @@ if uploaded_file is not None:
     with st.expander("📖 Preview Resume Text"):
         st.write(pdf_content[:3000])  # Limit preview to first 3000 characters
 
-    report_data = {}  # Dictionary to store report content
-
     col1, col2 = st.columns(2)
 
     with col1:
@@ -60,10 +62,10 @@ if uploaded_file is not None:
                     ats_score_text = f"{score:.2f}%"
                     st.subheader("✅ ATS Score")
                     st.write(ats_score_text)
-                    report_data["ATS Score"] = ats_score_text
+                    st.session_state.report_data["ATS Score"] = ats_score_text
                 except ValueError:
                     st.error("❌ Error: Unable to retrieve an exact percentage.")
-                    report_data["ATS Score"] = "Error parsing ATS score."
+                    st.session_state.report_data["ATS Score"] = response
                     st.text(response)
 
         if st.button("🔍 Why is my score low?"):
@@ -74,7 +76,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("📉 Reasons for Low Score")
                 st.write(response)
-                report_data["Reasons for Low Score"] = response
+                st.session_state.report_data["Reasons for Low Score"] = response
 
         if st.button("✅ Matched Skills"):
             with st.spinner("Extracting matched skills..."):
@@ -84,7 +86,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("🧩 Matched Skills")
                 st.write(response)
-                report_data["Matched Skills"] = response
+                st.session_state.report_data["Matched Skills"] = response
 
     with col2:
         if st.button("❌ Missing Skills"):
@@ -95,7 +97,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("🚫 Missing Skills")
                 st.write(response)
-                report_data["Missing Skills"] = response
+                st.session_state.report_data["Missing Skills"] = response
 
         if st.button("💬 HR Questions"):
             with st.spinner("Generating HR interview questions..."):
@@ -105,7 +107,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("🗣 HR Interview Questions")
                 st.write(response)
-                report_data["HR Interview Questions"] = response
+                st.session_state.report_data["HR Interview Questions"] = response
 
         if st.button("✉️ Cover Letter"):
             with st.spinner("Creating cover letter..."):
@@ -115,7 +117,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("📄 Cover Letter")
                 st.write(response)
-                report_data["Cover Letter"] = response
+                st.session_state.report_data["Cover Letter"] = response
 
                 # Individual download
                 st.download_button(
@@ -126,8 +128,10 @@ if uploaded_file is not None:
                 )
 
     # Final Report Download
-    if report_data:
-        full_report = "\n\n".join([f"=== {section} ===\n{content}" for section, content in report_data.items()])
+    if st.session_state.report_data:
+        full_report = "\n\n".join(
+            [f"=== {section} ===\n{content}" for section, content in st.session_state.report_data.items()]
+        )
         st.markdown("---")
         st.subheader("📦 Download Full Report")
         st.download_button(
