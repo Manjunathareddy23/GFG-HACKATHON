@@ -44,6 +44,8 @@ if uploaded_file is not None:
     with st.expander("📖 Preview Resume Text"):
         st.write(pdf_content[:3000])  # Limit preview to first 3000 characters
 
+    report_data = {}  # Dictionary to store report content
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -55,10 +57,13 @@ if uploaded_file is not None:
                 )
                 try:
                     score = float(response.replace("%", "").strip())
+                    ats_score_text = f"{score:.2f}%"
                     st.subheader("✅ ATS Score")
-                    st.write(f"{score:.2f}%")
+                    st.write(ats_score_text)
+                    report_data["ATS Score"] = ats_score_text
                 except ValueError:
                     st.error("❌ Error: Unable to retrieve an exact percentage.")
+                    report_data["ATS Score"] = "Error parsing ATS score."
                     st.text(response)
 
         if st.button("🔍 Why is my score low?"):
@@ -69,6 +74,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("📉 Reasons for Low Score")
                 st.write(response)
+                report_data["Reasons for Low Score"] = response
 
         if st.button("✅ Matched Skills"):
             with st.spinner("Extracting matched skills..."):
@@ -78,6 +84,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("🧩 Matched Skills")
                 st.write(response)
+                report_data["Matched Skills"] = response
 
     with col2:
         if st.button("❌ Missing Skills"):
@@ -88,6 +95,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("🚫 Missing Skills")
                 st.write(response)
+                report_data["Missing Skills"] = response
 
         if st.button("💬 HR Questions"):
             with st.spinner("Generating HR interview questions..."):
@@ -97,6 +105,7 @@ if uploaded_file is not None:
                 )
                 st.subheader("🗣 HR Interview Questions")
                 st.write(response)
+                report_data["HR Interview Questions"] = response
 
         if st.button("✉️ Cover Letter"):
             with st.spinner("Creating cover letter..."):
@@ -106,14 +115,27 @@ if uploaded_file is not None:
                 )
                 st.subheader("📄 Cover Letter")
                 st.write(response)
+                report_data["Cover Letter"] = response
 
-                # Allow user to download it
+                # Individual download
                 st.download_button(
                     label="📥 Download Cover Letter",
                     data=response,
                     file_name="Cover_Letter.txt",
                     mime="text/plain"
                 )
+
+    # Final Report Download
+    if report_data:
+        full_report = "\n\n".join([f"=== {section} ===\n{content}" for section, content in report_data.items()])
+        st.markdown("---")
+        st.subheader("📦 Download Full Report")
+        st.download_button(
+            label="⬇️ Download Complete ATS Report",
+            data=full_report,
+            file_name="ATS_Report.txt",
+            mime="text/plain"
+        )
 
 # Footer
 footer = """
